@@ -1,6 +1,6 @@
-import mysql from 'mysql'
+import mariadb from 'mariadb'
 import db_config from '../config/database.js'
-const connection = mysql.createConnection({
+const connection = mariadb.createPool({
   host: db_config.host,
   user: db_config.user,
   password: db_config.password,

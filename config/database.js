@@ -1,6 +1,6 @@
 export default {
   name: 'dashboard',
-  host: 'localhost',
+  host: process.env.DB_SERVER,
   user: 'root',
-  password: ''
+  password: 'root'
 }

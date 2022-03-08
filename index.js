@@ -9,8 +9,10 @@ app.use(bodyParser.json());
 app.use(cors())
 const port = 3000
 app.get('/todo', (req, res) => {
-  mysql.query('SELECT * FROM todo', (err, rows, fields) =>{
-	  res.json({ tasks: rows})
+  mysql.getConnection().then(conn => {
+    conn.query('SELECT * FROM todo').then(rows => {
+      res.json({ tasks: rows})
+    })
   })
 })
 
@@ -42,6 +44,6 @@ app.post('/todo/delete', (req, res) => {
   })
 })
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
 	console.log(`App listening on port ${port}`)
 })
