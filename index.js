@@ -1,39 +1,61 @@
 import express from 'express'
-import mysql from './services/mysql.js'
+import pool from './services/mariadb.js'
 import cors from 'cors'
 import bodyParser from 'body-parser'
 
 const app = express()
-app.use(bodyParser.urlencoded({extended: true}))
+app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json());
 app.use(cors())
 const port = 3000
-app.get('/todo', (req, res) => {
-  mysql.getConnection().then(conn => {
-    conn.query('SELECT * FROM todo').then(rows => {
-      res.json({ tasks: rows})
+
+app.get('/todo', async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    let rows = await conn.query('SELECT * FROM todo ORDER BY creation_date DESC')
+    rows.map(r => {
+      r.done = r.done === 1
+      return r
     })
-  })
+    res.json({ tasks: rows })
+  } catch (err) {
+
+  } finally {
+    if (conn) conn.release()
+  }
 })
 
-app.post('/todo', (req, res) => {
+app.post('/todo', async (req, res) => {
   const name = req.body.name
-  mysql.query(`INSERT INTO todo (title, description, done, update_date)
-                 VALUES ("${name}", "", FALSE, NOW())`, (err, result) => {
-                   if (err) throw err
-                   mysql.query(`SELECT * FROM todo WHERE id = ${result.insertId}`, (err, rows, fields) =>{
-                    res.json({ task: rows[0]})
-                  })
-                 })
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    let result = await conn.query(`INSERT INTO todo (title, description, done, creation_date, update_date)
+           VALUES ("${name}", "", FALSE, NOW(), NOW())`)
+    let rows = await conn.query(`SELECT * FROM todo WHERE id = ${result.insertId}`)
+    rows[0].done = rows[0].done === 1
+    res.json({ task: rows[0] })
+  } catch (err) {
+    console.log(err)
+  } finally {
+    if (conn) conn.release()
+  }
 })
 
-app.post('/todo/toggle', (req, res) => {
+app.post('/todo/toggle', async (req, res) => {
   const done = req.body.done
   const id = req.body.id
-  mysql.query(`UPDATE todo SET done = ${done} WHERE id = ${id}`, (err) => {
-    if (err) throw err
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query(`UPDATE todo SET done = ${done} WHERE id = ${id}`)
     res.json(true)
-  })
+  } catch (err) {
+    console.log(err)
+  } finally {
+    if (conn) conn.release()
+  }
 })
 
 app.post('/todo/delete', (req, res) => {
@@ -45,5 +67,5 @@ app.post('/todo/delete', (req, res) => {
 })
 
 app.listen(port, '0.0.0.0', () => {
-	console.log(`App listening on port ${port}`)
+  console.log(`App listening on port ${port}`)
 })
