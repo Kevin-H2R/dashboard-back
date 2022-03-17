@@ -1,5 +1,6 @@
 import db_config from '../config/database.js'
 import mariadb from 'mariadb';
+// import { query } from 'express';
 
 // here we create a new connection pool
 const pool = mariadb.createPool({
@@ -8,6 +9,33 @@ const pool = mariadb.createPool({
   password: db_config.password,
   database: db_config.name
 });
+
+let query = async function (query) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query(query)
+    return true
+  } catch (err) {
+    console.log(err)
+    return false
+  } finally {
+    if (conn) conn.release()
+  }
+}
+
+let queryResult = async function (query) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    return await conn.query(query)
+  } catch (err) {
+    console.log(err)
+    return null
+  } finally {
+    if (conn) conn.release()
+  }
+}
 
 // here we are exposing the ability to creating new connections
 export default {
@@ -19,5 +47,7 @@ export default {
           reject(error);
         });
       });
-    }
+    },
+    query: query,
+    queryResult: queryResult
   }
