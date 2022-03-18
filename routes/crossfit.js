@@ -13,7 +13,16 @@ export default function (app) {
             .then(async response => {
                 const root = parse(response.data)
                 const wod = root.querySelectorAll('.today_wod')
-                const node = wod[wod.length - 1]
+                let i = 0
+                for (i; i < wod.length; ++i) {
+                    const cur = wod[i]
+                    const title = cur.querySelectorAll('.title')[0]
+                    const wodDate = title.text.trim().substring(0, 10)
+                    if (new Date(wodDate).getDate() === new Date().getDate()) {
+                        break
+                    }
+                }
+                const node = wod[i]
                 const titleTag = node.getElementsByTagName('dt')[0]
                 const title = titleTag.text
                 const descriptionTag = node.getElementsByTagName('dd')[1]
@@ -67,5 +76,11 @@ export default function (app) {
                 await pool.query('UPDATE crossfit_session SET attended_time = NULL WHERE DATE(date) = CURDATE()')
                 res.json(true)
             })
+    })
+
+    app.get('/crossfit/attendance', async (req, res) => {
+        const items = await pool.queryResult('SELECT DATE_FORMAT(attended_time,\'%Y-%m-%d\') as attended_time FROM crossfit_session WHERE attended_time IS NOT NULL')
+        const result = items.map(elem => elem.attended_time.substring(0, 10))
+        res.json(result)
     })
 }
