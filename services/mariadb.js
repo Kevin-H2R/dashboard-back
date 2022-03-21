@@ -7,7 +7,8 @@ const pool = mariadb.createPool({
   host: db_config.host, 
   user: db_config.user, 
   password: db_config.password,
-  database: db_config.name
+  database: db_config.name,
+  port: 3308
 });
 
 let query = async function (query) {

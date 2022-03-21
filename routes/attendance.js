@@ -15,13 +15,19 @@ export default function (app) {
         const month = (date.getMonth() + 1).toString().padStart(2, '0')
         const formatedDate = `${date.getFullYear()}-${month}-${date.getDate()} ${date.getHours()}:00:00`
         await pool.query(`INSERT INTO attendance (session_id, login, time) VALUES
-          ((SELECT id FROM crossfit_session WHERE DATE(date) = CURDATE()), "${login}", "${formatedDate})"`)
+          ((SELECT id FROM crossfit_session WHERE DATE(date) = CURDATE()), "${login}", "${formatedDate}")`)
         res.json(true)
       })
   })
 
   app.get('/attendance/kebinou', async (req, res) => {
     let result = await pool.queryResult('SELECT DATE_FORMAT(time,\'%Y-%m-%d\') as time FROM attendance WHERE login = "kebinou"')
+    result = result.map(elem => elem.time.substring(0, 10))
+    res.json(result)
+  })
+
+  app.get('/attendance/nara', async (req, res) => {
+    let result = await pool.queryResult('SELECT DATE_FORMAT(time,\'%Y-%m-%d\') as time FROM attendance WHERE login = "sinmk333"')
     result = result.map(elem => elem.time.substring(0, 10))
     res.json(result)
   })
