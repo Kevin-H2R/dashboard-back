@@ -13,6 +13,10 @@ export default function (app) {
       .then(async response => {
         const root = parse(response.data)
         const wod = root.querySelectorAll('.today_wod')
+        if (wod.length === 0) {
+          res.json({ title: "", description: "" })
+          return
+        }
         let i = 0
         for (i; i < wod.length; ++i) {
           const cur = wod[i]
@@ -37,7 +41,6 @@ export default function (app) {
     const password = req.body.password
     axios.post('http://crossfitzone.cafe24.com/ajax/login.php', new URLSearchParams({ lg: login, pwd: password }), { withCredentials: true })
       .then(async response => {
-        // let session = await pool.queryResult("SELECT * FROM crossfit_session WHERE DATE(date) = CURDATE()")
         let attendance = await pool.queryResult(`SELECT * FROM attendance WHERE DATE(time) = CURDATE() AND login = "${login}"`)
         let registered = false
         let time = null;
