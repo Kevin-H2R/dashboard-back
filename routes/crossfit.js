@@ -91,7 +91,8 @@ export default function (app) {
   })
 
   app.get('/crossfit/result', async (req, res) => {
-    const results = await pool.queryResult('SELECT * FROM crossfit_result as cr INNER JOIN crossfit_session cs on cr.session_id = cs.id ORDER by cs.date DESC')
+    const results = await pool.queryResult(`SELECT cr.id, cr.performance, cs.date, cs.title FROM
+     crossfit_result as cr INNER JOIN crossfit_session cs on cr.session_id = cs.id ORDER by cs.date DESC`)
     res.json(results)
   })
 
@@ -101,15 +102,18 @@ export default function (app) {
   })
 
   app.post('/crossfit/session', async (req, res) => {
-    const sessionId = res.data.id
-    const performance = res.data.performance
+    const sessionId = req.body.sessionId
+    let performance = req.body.performance
+    performance = performance.replace(/(?:\r\n|\r|\n)/g, '<br>');
     const existingResult = await pool.queryResult(`SELECT id FROM crossfit_result WHERE session_id = ${sessionId}`)
     if (existingResult.length > 0) {
       await pool.query(`UPDATE crossfit_result SET performance = "${performance}" WHERE session_id = ${sessionId}`)
       res.json(true)
       return
     }
-    await pool.query(`INSERT INTO crossfit_result (session_id, performance) VALUES (${sessionId}, "${performance}")`)
-    res.json(true)
+    const result = await pool.queryResult(`INSERT INTO crossfit_result (session_id, performance) VALUES (${sessionId}, "${performance}")`)
+    const inserted = await pool.queryResult(`SELECT cr.id, cr.performance, cs.date, cs.title FROM
+    crossfit_result as cr INNER JOIN crossfit_session cs on cr.session_id = cs.id WHERE cr.id = ${result.insertId} ORDER by cs.date DESC`)
+    res.json(inserted[0])
   })
 }
