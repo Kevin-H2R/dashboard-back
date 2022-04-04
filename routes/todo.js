@@ -39,4 +39,12 @@ export default function (app) {
         await pool.query(`DELETE FROM todo WHERE id = ${id}`)
         res.json(true)
     })
+
+    app.post('/todo/modify', async (req, res) => {
+        const id = req.body.id
+        const title = req.body.title
+        const description = req.body.description
+        await pool.query(`UPDATE todo SET title = "${title}", description = "${description}" WHERE id = ${id}`)
+        res.json(true)
+    })
 }
