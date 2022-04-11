@@ -29,7 +29,7 @@ export default function (app) {
         const node = wod[i]
         if (node === undefined) {
           res.json({title: 'No WOD today', description: 'No WOD today'})
-          exit
+          return
         }
         const titleTag = node.getElementsByTagName('dt')[0]
         const title = titleTag.text
