@@ -18,6 +18,9 @@ export default function (app) {
           ((SELECT id FROM crossfit_session WHERE DATE(date) = CURDATE()), "${login}", "${formatedDate}")`)
         res.json(true)
       })
+      .catch((err) => {
+        console.log(err)
+      })
   })
 
   app.get('/attendance/kebinou', async (req, res) => {
@@ -40,7 +43,7 @@ export default function (app) {
       new URLSearchParams({ time: time }),
       { withCredentials: true, headers: { common: { 'Cookie': cookie } } })
       .then(async () => {
-        await pool.query(`DELETE FROM attendance WHERE login = ${login} AND DATE(time) = CURDATE()`)
+        await pool.query(`DELETE FROM attendance WHERE login = "${login}" AND DATE(time) = CURDATE()`)
         res.json(true)
       })
   }) 

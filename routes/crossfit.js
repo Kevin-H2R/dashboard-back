@@ -21,6 +21,11 @@ export default function (app) {
         for (i; i < wod.length; ++i) {
           const cur = wod[i]
           const title = cur.querySelectorAll('.title')[0]
+          if (title === undefined) {
+            await pool.query(`INSERT INTO crossfit_session (date, title, description) VALUES (NOW(), "Error when retrieving", "Error when retrieving")`)
+            res.json({ title: "Error when retrieving", description: "Error when retrieving" })
+            return
+          }
           const wodDate = title.text.trim().substring(0, 10)
           if (new Date(wodDate).getDate() === new Date().getDate()) {
             break
@@ -54,7 +59,12 @@ export default function (app) {
           time = date.getHours() - 12
           registered = true
         }
-        res.json({ cookie: response.headers['set-cookie'][0], registered: registered, time: time })
+        let cookie = ""
+        if (response.headers['set-cookie'] !== undefined) {
+          cookie = response.headers['set-cookie'][0]
+        }
+
+        res.json({ cookie: cookie, registered: registered, time: time })
       })
   })
 
