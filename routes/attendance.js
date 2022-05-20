@@ -11,9 +11,10 @@ export default function (app) {
       { withCredentials: true, headers: { common: { 'Cookie': cookie } } })
       .then(async () => {
         const date = new Date()
+        console.log(date)
         date.setHours(time + 12)
         const month = (date.getMonth() + 1).toString().padStart(2, '0')
-        const formatedDate = `${date.getFullYear()}-${month}-${date.getDate()} ${date.getHours()}:00:00`
+        const formatedDate = `${date.getFullYear()}-${month}-${date.getDate().padStart(2, '0')} ${date.getHours()}:00:00`
         await pool.query(`INSERT INTO attendance (session_id, login, time) VALUES
           ((SELECT id FROM crossfit_session WHERE DATE(date) = CURDATE()), "${login}", "${formatedDate}")`)
         res.json(true)
