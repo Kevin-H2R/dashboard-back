@@ -5,8 +5,13 @@ import pool from '../services/mariadb.js'
 export default function (app) {
   app.get('/crossfit', async (req, res) => {
     const existingSession = await pool.queryResult('SELECT * FROM crossfit_session WHERE DATE(date) = CURDATE()')
+    console.log('/crossfit login in session: ' + req.session.login)
     if (existingSession.length > 0) {
-      res.json({ title: existingSession[0].title, description: existingSession[0].description })
+      let data = { title: existingSession[0].title, description: existingSession[0].description }
+      if (req.session.login == 'kebinou') {
+        data.login = 'kebinou'
+      }
+      res.json(data)
       return
     }
     axios.get("http://crossfitzone.cafe24.com/wod.php")
@@ -41,6 +46,10 @@ export default function (app) {
         const descriptionTag = node.getElementsByTagName('dd')[1]
         const description = descriptionTag.innerHTML.trim()
         await pool.query(`INSERT INTO crossfit_session (date, title, description) VALUES (NOW(), "${title}", "${description}")`)
+        let data = { title: title, description: description }
+        if (req.session.login == 'kebinou') {
+          data.login = 'kebinou'
+        }
         res.json({ title: title, description: description })
       })
   })
@@ -62,6 +71,9 @@ export default function (app) {
         let cookie = ""
         if (response.headers['set-cookie'] !== undefined) {
           cookie = response.headers['set-cookie'][0]
+          req.session.PHPSESSID = cookie
+          req.session.login = login
+          console.log('/crossfit/login setting login in session: ' + login)
         }
 
         res.json({ cookie: cookie, registered: registered, time: time })
@@ -69,11 +81,10 @@ export default function (app) {
   })
 
   app.post('/crossfit/register', (req, res) => {
-    const cookie = req.body.cookie
     const time = req.body.time
     axios.post('http://crossfitzone.cafe24.com/class_requestAct2_new.php',
       new URLSearchParams({ time: time, type: 1, weekType: 1 }),
-      { withCredentials: true, headers: { common: { 'Cookie': cookie } } })
+      { withCredentials: true, headers: { common: { 'Cookie': 'PHPSESSID=' + req.session.PHPSESSID } } })
       .then(async () => {
         const date = new Date()
         date.setHours(time + 12)
@@ -92,7 +103,6 @@ export default function (app) {
       // {time: time},
       { withCredentials: true, headers: { common: { 'Cookie': cookie } } })
       .then(async (result) => {
-        console.log(result)
         await pool.query('UPDATE crossfit_session SET attended_time = NULL WHERE DATE(date) = CURDATE()')
         res.json(true)
       })

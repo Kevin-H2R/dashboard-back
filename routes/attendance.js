@@ -4,19 +4,13 @@ import pool from '../services/mariadb.js'
 export default function (app) {
   app.post('/attendance', (req, res) => {
     const time = req.body.time
-    const login = req.body.login
-    const cookie = req.body.cookie
+    console.log('login from attendance: ' + req.session.login)
     axios.post('http://crossfitzone.cafe24.com/class_requestAct2_new.php',
       new URLSearchParams({ time: time, type: 1, weekType: 1 }),
-      { withCredentials: true, headers: { common: { 'Cookie': cookie } } })
+      { withCredentials: true, headers: { common: { 'Cookie': req.session.PHPSESSID } } })
       .then(async () => {
-        const date = new Date()
-        console.log(date)
-        date.setHours(time + 12)
-        const month = (date.getMonth() + 1).toString().padStart(2, '0')
-        const formatedDate = `${date.getFullYear()}-${month}-${date.getDate().padStart(2, '0')} ${date.getHours()}:00:00`
         await pool.query(`INSERT INTO attendance (session_id, login, time) VALUES
-          ((SELECT id FROM crossfit_session WHERE DATE(date) = CURDATE()), "${login}", "${formatedDate}")`)
+          ((SELECT id FROM crossfit_session WHERE DATE(date) = CURDATE()), "${req.session.login}", CONCAT(CURDATE(), ' ${parseInt(time) + 12}:00:00'))`)
         res.json(true)
       })
       .catch((err) => {
@@ -37,14 +31,12 @@ export default function (app) {
   })
 
   app.post('/attendance/cancel', (req, res) => {
-    const cookie = req.body.cookie
     const time = req.body.time
-    const login = req.body.login
     axios.post('http://crossfitzone.cafe24.com/ajax/cancelreq2.php',
       new URLSearchParams({ time: time }),
-      { withCredentials: true, headers: { common: { 'Cookie': cookie } } })
+      { withCredentials: true, headers: { common: { 'Cookie': req.session.PHPSESSID } } })
       .then(async () => {
-        await pool.query(`DELETE FROM attendance WHERE login = "${login}" AND DATE(time) = CURDATE()`)
+        await pool.query(`DELETE FROM attendance WHERE login = "${req.session.login}" AND DATE(time) = CURDATE()`)
         res.json(true)
       })
   }) 
